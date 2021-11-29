@@ -36,7 +36,7 @@ echo "$count1 keys was added! Press Enter to compare results"
 read
 fdbcli --exec "getrange \"\" \\xFF $(($count+$count1))" > /tmp/result_db
 sort /tmp/result_db -o /tmp/result_db
-sed -i 1,3d /tmp/result_db
+sed -i '/\(^$\|Range limited to\)/d' /tmp/result_db
 sort /tmp/result_local -o /tmp/result_local
 status=$(diff -q /tmp/result_local /tmp/result_db)
 if [ -z "$status" ]; then
