@@ -1,6 +1,7 @@
 #!/bin/bash
 backupPath=/root/backupname2
 logFile=/root/backupname2/log
+backupDuration=30
 lastTag=''
 function removeTmp {
   rm $backupPath/tmp*
@@ -13,7 +14,6 @@ function toLog {
 }
 
 function stopBackup {
-  echo $1
   if [ -z "$1" ]; then
     toLog '31' "No running backups"
     return 1
@@ -24,7 +24,7 @@ function stopBackup {
   fdbbackup discontinue -t $tag > $backupPath/tmp11 2> $backupPath/tmp22
   local success=$(cat $backupPath/tmp11)
   local failed=$(cat $backupPath/tmp22) 
-  #removeTmp
+  removeTmp
   if ! [ -z "$success" ]; then
     toLog 37 "$success"
     return 0
@@ -50,7 +50,7 @@ function startBackup {
   fdbbackup start -d file://$backupPath -s 3600 -t $tag > $backupPath/tmp1 2> $backupPath/tmp2
   local success=$(cat $backupPath/tmp1)
   local failed=$(cat $backupPath/tmp2) 
-  #removeTmp
+  removeTmp
   if ! [ -z "$success" ]; then
     toLog '37' "$success"
     return 0
@@ -60,9 +60,15 @@ function startBackup {
   fi
 }
 
+function deleteOldBackups {
+  find $backupPath -type d -mtime +$backupDuration | xargs -L1 fdbbackup delete -d
+}
+
+
 lastTag=$(getLastTag)
 if startBackup; then
   stopBackup $lastTag
+  deleteOldBackups
 fi
 
 exit
