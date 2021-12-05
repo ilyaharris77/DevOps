@@ -8,14 +8,18 @@ function removeTmp {
 }
 
 function toLog {
-  local color="\033[${1}m"
-  local baseColor="\033[37m"
-  echo -e "$color$(date +[%d-%m-%y\ %H:%M:%S]) - $2$baseColor" >> $logFile    
+  local baseColor="\033[0m"
+  if ! [ -z $2 ]; then
+    local color="\033[${2}m"
+  else
+    local color=$baseColor
+  fi  
+  echo -e "$color$(date +[%d-%m-%y\ %H:%M:%S]) - $1$baseColor" >> $logFile    
 }
 
 function stopBackup {
   if [ -z "$1" ]; then
-    toLog '31' "No running backups"
+    toLog "No running backups" 31
     return 1
   fi
   local tag=$1
@@ -26,10 +30,10 @@ function stopBackup {
   local failed=$(cat $backupPath/tmp22) 
   removeTmp
   if ! [ -z "$success" ]; then
-    toLog 37 "$success"
+    toLog "$success"
     return 0
   elif ! [ -z "$failed" ]; then
-    toLog 31 "$failed"
+    toLog "$failed" 31
     return 1
   fi
 }
@@ -40,7 +44,7 @@ function getLastTag {
   count=$(fdbcli --exec "status details" | awk -v RS='' '/Running backup tags/' | sed 1d | wc -l)
   lastTag=$(fdbcli --exec "status details" | awk -v RS='' '/Running backup tags/' | sed 1d | awk 'NR == 1{print$1}')
   if [[ $count -gt 1 ]]; then
-    toLog 31 "More than one backup running"
+    toLog "More than one backup running" 31
   fi
   echo $lastTag
 }
@@ -52,10 +56,10 @@ function startBackup {
   local failed=$(cat $backupPath/tmp2) 
   removeTmp
   if ! [ -z "$success" ]; then
-    toLog '37' "$success"
+    toLog "$success"
     return 0
   elif ! [ -z "$failed" ]; then
-    toLog '31' "$failed"
+    toLog "$failed" 31
     return 1
   fi
 }
