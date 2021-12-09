@@ -2,6 +2,7 @@
 backupPath=/root/backupname2
 logFile=/root/backupname2/log
 backupDuration=30
+deltaTime=3600
 lastTag=''
 function removeTmp {
   rm $backupPath/tmp*
@@ -70,6 +71,13 @@ function deleteOldBackups {
 
 
 lastTag=$(getLastTag)
+
+currentTime=$(date +%s)
+tagTime=$(echo $lastTag | awk -F ':' '{print1}')
+if (( $currentTime-$tagTime lt $deltaTime )); then
+  exit
+fi
+
 if startBackup; then
   stopBackup $lastTag
   deleteOldBackups
