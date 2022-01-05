@@ -69,18 +69,20 @@ function deleteOldBackups {
   find $backupPath -type d -mtime +$backupDuration | xargs -L1 fdbbackup delete -d
 }
 
-
 lastTag=$(getLastTag)
 
-currentTime=$(date +%s)
-tagTime=$(echo $lastTag | awk -F ':' '{print1}')
-if (( $currentTime-$tagTime lt $deltaTime )); then
-  exit
-fi
-
-if startBackup; then
-  stopBackup $lastTag
-  deleteOldBackups
+if ! [ -z "$lastTag" ]; then
+  currentTime=$(date +%s)
+  tagTime=$(echo $lastTag | awk -F ':' '{print1}')
+  if (( $currentTime-$tagTime lt $deltaTime )); then
+    exit
+  fi
+  if startBackup; then
+    stopBackup $lastTag
+    deleteOldBackups
+  fi
+else
+  startBackup;
 fi
 
 exit
