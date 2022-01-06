@@ -74,7 +74,7 @@ lastTag=$(getLastTag)
 if ! [ -z "$lastTag" ]; then
   currentTime=$(date +%s)
   tagTime=$(echo $lastTag | awk -F ':' '{print1}')
-  if (( $currentTime-$tagTime lt $deltaTime )); then
+  if [ $(( $currentTime-$tagTime )) -lt $deltaTime ]; then
     exit
   fi
   if startBackup; then
