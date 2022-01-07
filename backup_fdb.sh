@@ -73,7 +73,7 @@ lastTag=$(getLastTag)
 
 if ! [ -z "$lastTag" ]; then
   currentTime=$(date +%s)
-  tagTime=$(echo $lastTag | awk -F ':' '{print1}')
+  tagTime=$(echo $lastTag | awk -F ':' '{print$1}')
   if [ $(( $currentTime-$tagTime )) -lt $deltaTime ]; then
     exit
   fi
