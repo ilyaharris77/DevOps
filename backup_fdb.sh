@@ -61,7 +61,7 @@ function startBackup {
   local failed=$(cat $backupPath/tmp2) 
   removeTmp
   if ! [ -z "$success" ]; then
-    sed -i -s "\$a $tag" $nfsMountPath
+    sed -i -s "\$a $tag" $lastTagsFile
     toLog "$success"
     return 0
   elif ! [ -z "$failed" ]; then
@@ -74,6 +74,7 @@ function deleteOldBackups {
   find $backupPath -type d -mtime +$backupDuration | xargs -rL1 fdbbackup delete -d 2>&1 > /dev/null
 }
 
+touch $lastTagsFile
 lastTag=$(getLastTag)
 
 if ! [ -z "$lastTag" ]; then
