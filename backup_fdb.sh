@@ -66,7 +66,7 @@ function startBackup {
 }
 
 function deleteOldBackups {
-  find $backupPath -type d -mtime +$backupDuration | xargs -L1 fdbbackup delete -d
+  find $backupPath -type d -mtime +$backupDuration | xargs -rL1 fdbbackup delete -d 2>&1 > /dev/null
 }
 
 lastTag=$(getLastTag)
