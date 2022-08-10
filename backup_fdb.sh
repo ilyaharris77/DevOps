@@ -61,7 +61,8 @@ function startBackup {
   local failed=$(cat $backupPath/tmp2) 
   removeTmp
   if ! [ -z "$success" ]; then
-    sed -i -s "\$a $tag" $lastTagsFile
+    #sed -i -s "\$a $tag" $lastTagsFile
+    echo "$tag" >> $lastTagsFile
     toLog "$success"
     return 0
   elif ! [ -z "$failed" ]; then
