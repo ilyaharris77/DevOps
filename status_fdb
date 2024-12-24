@@ -1,0 +1,146 @@
+import json, os, subprocess, datetime ,fcntl, os.path, time
+from datetime import datetime 
+
+os.environ["TZ"] = "Europe/Moscow"
+os.umask(0o022) 
+
+scriptname=os.path.splitext(os.path.basename(__file__))[0]
+lockfile='/tmp/' + scriptname + '.lock'
+flh = open(lockfile, 'a')
+try:
+    fcntl.flock(flh,fcntl.LOCK_EX|fcntl.LOCK_NB)
+except:
+    exit()
+flh.truncate(0)
+flh.write(str(os.getpid()))
+flh.flush()
+
+ 
+
+try:
+
+#    with open('/app/fdb/scripts/status_json') as read_file: data = json.load(read_file)
+    data = json.loads(subprocess.Popen(["/usr/bin/fdbcli", "--exec", "status json"], stdout=subprocess.PIPE).stdout.read())
+except:
+    data = json.loads("{}") 
+
+name_cluster = data.get('cluster',{}).get('connection_string',"").partition(':')[0]
+active_dc = data.get('cluster',{}).get('active_primary_dc',"")
+htTS=data.get('client',{}).get('timestamp',0)
+dtTS=data.get('cluster',{}).get('cluster_controller_timestamp',0)
+host_time = datetime.fromtimestamp(htTS).strftime('%Y-%m-%dT%H:%M:%S')
+database_time = datetime.fromtimestamp(dtTS).strftime('%Y-%m-%dT%H:%M:%S') 
+
+st_db = 'successful'
+if abs(htTS - dtTS) > 2:
+        st_db = 'differtime'
+try:
+    if data['client']['database_status']['available'] == True and data['cluster']['database_available'] == True:
+        if not data['client']['database_status']['healthy'] == True:
+            st_db = 'broken'
+    else:
+        st_db = 'unavailable'
+except:
+    st_db='missing'
+try:
+    if data['cluster']['database_lock_state']['locked'] == True:
+        st_db = 'locked'
+except:
+    pass 
+
+ips = []
+try:
+    machines = (data['cluster']['machines'])
+    for i in machines:
+        ips.append(machines[i]['address'])
+    ips.sort()
+except:
+    pass 
+
+timestamps = []
+try:
+    tags = (data['cluster']['layers']['backup'])
+    for i in tags['tags']:
+        timestamps.append(tags['tags'][i]['current_container'])
+except:
+    try:
+        timestamps.extend(os.listdir('/mnt/backup_fdb_1/391_45'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_2/391_45'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_3/391_45'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_4/391_45'))
+    except:
+        pass
+try:
+    timestamps = list(map(lambda x: x.partition('backup-')[2],timestamps))
+    timestamps.sort() 
+
+    backup_time = datetime.fromtimestamp(time.mktime(time.strptime(timestamps.pop(), "%Y-%m-%d-%H-%M-%S.%f"))).strftime('%Y-%m-%dT%H:%M:%S')
+except:
+    backup_time = '' 
+
+################################Date_backup_tape
+import datetime 
+
+def parse_date_time(date_str, time_str):
+    try:
+        month, day, year = map(int, date_str.split('/'))
+        hour, minute = map(int, time_str.split(':'))
+        return datetime.datetime(year, month, day, hour, minute)
+    except ValueError:
+        return None 
+
+def format_date_time(dt):
+    return dt.strftime('%Y-%m-%dT%H:%M:%S') 
+
+max_date = None
+try:
+    with open('/mnt/backup_fdb_1/391_45/status_tape', 'r') as file:
+        for line in file:
+            parts = line.split()
+            if len(parts) < 10:
+                continue 
+
+            current_date = parse_date_time(parts[0], parts[1])
+            if current_date is None:
+                continue
+#        date_str, time_str = parts[0], parts[1]
+            try:
+                files = int(parts[3])
+                kb = int(parts[4])
+            except ValueError:
+                continue 
+
+#        print("Date: {}, Time: {}, Files: {}, KB: {}".format(date_str, time_str, files, kb)) 
+
+            if files > 11 and kb > 64:
+                if max_date is None or current_date > max_date:
+                    max_date = current_date
+except:
+    max_date = ''
+bkp_time=datetime.datetime.strptime(backup_time, '%Y-%m-%dT%H:%M:%S')
+if max_date:
+   days_difference = abs((max_date - bkp_time).days)
+   backup_time_to_write = backup_time if days_difference == 1 else format_date_time(max_date) 
+
+#print(format_date_time(max_date))
+#print(days_difference)
+#print(backup_time)
+#print(backup_time_to_write) 
+
+########################################################
+
+tmpstatusfile='/tmp/.' + scriptname
+status_file='/tmp/' + scriptname
+try:
+    with open(tmpstatusfile, 'w') as fw:
+        fw.write("host_time="+host_time+"\n")
+        fw.write("database_time="+database_time+"\n")
+        fw.write("name_cluster="+name_cluster+"\n")
+        fw.write("active_dc="+active_dc+"\n")
+        fw.write("list_ip="+str(ips)+"\n")
+        fw.write("status_db="+st_db+"\n")
+        fw.write("backup_time="+backup_time+"\n")
+        fw.write("backup_tape_time="+backup_time_to_write+"\n")
+except:
+    pass
+os.rename(tmpstatusfile, status_file)
