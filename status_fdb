@@ -1,3 +1,4 @@
+#!/bin/python
 import json, os, subprocess, datetime ,fcntl, os.path, time
 from datetime import datetime 
 
@@ -94,7 +95,7 @@ def format_date_time(dt):
 
 max_date = None
 try:
-    with open('/mnt/backup_fdb_1/391_45/status_tape', 'r') as file:
+    with open('/mnt/backup_fdb_1/status_tape', 'r') as file:
         for line in file:
             parts = line.split()
             if len(parts) < 10:
