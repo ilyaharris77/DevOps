@@ -64,10 +64,10 @@ try:
         timestamps.append(tags['tags'][i]['current_container'])
 except:
     try:
-        timestamps.extend(os.listdir('/mnt/backup_fdb_1/391_45'))
-        timestamps.extend(os.listdir('/mnt/backup_fdb_2/391_45'))
-        timestamps.extend(os.listdir('/mnt/backup_fdb_3/391_45'))
-        timestamps.extend(os.listdir('/mnt/backup_fdb_4/391_45'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_1'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_2'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_3'))
+        timestamps.extend(os.listdir('/mnt/backup_fdb_4'))
     except:
         pass
 try:
